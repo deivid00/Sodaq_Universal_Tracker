@@ -32,6 +32,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
+#define MQTT_COMMS	//FIXME: Include it on main project
+
 #include <stdint.h>
 #include <Arduino.h>
 
@@ -62,7 +64,10 @@ struct ConfigParams
     char _appSKeyOrEUI[32 + 1];
     char _nwSKeyOrAppKey[32 + 1];
 
-    char _attToken[32 + 1];
+    char _attToken[45 + 1];
+
+    char _mqttTopic[50 + 1];
+    char _mqttBroker[32 + 1];
 
     char _apn[32 + 1];
     char _forceOperator[32 + 1];
@@ -130,6 +135,8 @@ public:
     const char* getForceOperator() const { return _forceOperator; }
 
     const char* getAttToken() const { return _attToken; }
+    const char* getMqttBroker() const { return _mqttBroker; }
+    const char* getMqttTopic() const { return _mqttTopic; }
 
     const char* getApnUser() const { return _apnUser; }
     const char* getApnPassword() const { return _apnPassword; }

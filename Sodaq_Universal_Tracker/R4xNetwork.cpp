@@ -200,3 +200,14 @@ bool R4xNetwork::getModuleVersion(char* buffer, size_t size)
 {
     return r4x.getFirmwareRevision(buffer, size);
 }
+
+bool R4xNetwork::modemConnect(void){
+    return setActive(true);
+    //return 1;
+}
+
+bool R4xNetwork::setMqttInstance(Sodaq_R4X_MQTT* r4xMqttInstance){
+    //r4xMqttInstance->setR4Xinstance(&r4x, (*bool)modemConnect);
+    r4xMqttInstance->setR4Xinstance(&r4x);
+    return true;
+}

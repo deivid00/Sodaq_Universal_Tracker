@@ -38,7 +38,12 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "LoraNetwork.h"
 #include "N2xNetwork.h"
 #include "R4xNetwork.h"
-#include "3GNetwork.h"
+
+#define MQTT_COMMS  //FIXME: Include it on main project
+
+#ifndef MQTT_COMMS
+    #include "3GNetwork.h"
+#endif
 
 class Network {
 public:
@@ -63,6 +68,8 @@ public:
     bool setActive(bool on);
 
     void setNetworkType(NetworkType type);
+
+    void setMqttTransportLayer(NetworkType type);
 
     // Sets the optional "Diagnostics and Debug" stream.
     void setDiag(Stream& stream) { _diagStream = &stream; }

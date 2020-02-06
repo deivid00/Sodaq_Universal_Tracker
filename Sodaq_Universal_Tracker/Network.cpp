@@ -45,7 +45,14 @@ POSSIBILITY OF SUCH DAMAGE.
 LoraNetwork loraNetwork;
 N2xNetwork  n2xNetwork;
 R4xNetwork  r4xNetwork;
-Network3G   network3G;
+#ifdef MQTT_COMMS
+  #include <Sodaq_MQTT.h>
+  #include <Sodaq_R4X_MQTT.h>
+
+  Sodaq_R4X_MQTT r4x_mqtt;
+#else
+    Network3G   network3G;  //FIXME: Problem with R4X_MQTT
+#endif
 
 static bool isImeiInitialized;
 static char cachedImei[16];
@@ -81,6 +88,13 @@ bool Network::init(Uart & modemStream, DataReceiveCallback callback, uint32_t(*g
 
         const char* urat = (_networkType == NETWORK_TYPE_NBIOT_R4 ? "8" : (_networkType == NETWORK_TYPE_LTEM_R4 ? "7" : "9"));
 
+#ifdef MQTT_COMMS
+        // Inform our mqtt instance that we use r4x as the transport
+        //r4x_mqtt.setR4Xinstance(&r4x, modemConnect);
+        r4xNetwork.setMqttInstance(&r4x_mqtt);
+        mqtt.setTransport(&r4x_mqtt);
+#endif
+
         return r4xNetwork.init(modemStream, callback, messages, join, urat);
     }
     case NETWORK_TYPE_LORA: {
@@ -94,6 +108,7 @@ bool Network::init(Uart & modemStream, DataReceiveCallback callback, uint32_t(*g
 
         return loraNetwork.init(modemStream, callback, getNow, messages, join);
     }
+#ifndef MQTT_COMMS
     case NETWORK_TYPE_2G_3G: {
         if (_diagStream) {
             network3G.setDiag(_diagStream);
@@ -105,6 +120,7 @@ bool Network::init(Uart & modemStream, DataReceiveCallback callback, uint32_t(*g
 
         return network3G.init(modemStream, callback, messages, join);
     }
+#endif
     default: {
         debugPrintLn("Unsupported network type");
         return false;
@@ -126,9 +142,12 @@ uint8_t Network::transmit(uint8_t * buffer, uint8_t size, uint32_t rxTimeout)
     case NETWORK_TYPE_LORA: {
         return LoRa.transmit(buffer, size);
     }
+#ifndef MQTT_COMMS
     case NETWORK_TYPE_2G_3G: {
         return network3G.transmit(buffer, size, rxTimeout);
     }
+#endif
+
     default: {
         debugPrintLn("Unsupported network type");
         return 0;
@@ -153,10 +172,12 @@ void Network::loopHandler()
         LoRa.loopHandler();
         break;
     }
+#ifndef MQTT_COMMS
     case NETWORK_TYPE_2G_3G: {
         network3G.loopHandler();
         break;
     }
+#endif
     default: {
         debugPrintLn("Unsupported network type");
         break;
@@ -181,10 +202,12 @@ void Network::sleep()
             loraNetwork.sleep();
             break;
         }
+#ifndef MQTT_COMMS
         case NETWORK_TYPE_2G_3G: {
             network3G.sleep();
             break;
         }
+#endif
         default: {
             debugPrintLn("Unsupported network type");
             break;
@@ -210,10 +233,12 @@ bool Network::setActive(bool on)
             success = loraNetwork.setActive(on);
             break;
         }
+#ifndef MQTT_COMMS
         case NETWORK_TYPE_2G_3G: {
             success = network3G.setActive(on);
             break;
         }
+#endif
         default: {
             debugPrintLn("Unsupported network type");
             break;
@@ -236,9 +261,11 @@ uint32_t Network::getBaudRate()
         case NETWORK_TYPE_LORA: {
             return loraNetwork.getBaudRate();
         }
+#ifndef MQTT_COMMS
         case NETWORK_TYPE_2G_3G: {
             return network3G.getBaudRate();
         }
+#endif
         default: {
             debugPrintLn("Unsupported network type");
             break;
@@ -279,10 +306,12 @@ const char* Network::getIMEI()
             case NETWORK_TYPE_LORA: {
                 break;
             }
+#ifndef MQTT_COMMS
             case NETWORK_TYPE_2G_3G: {
                 success = network3G.getIMEI(tmpBuffer, sizeof(tmpBuffer));
                 break;
             }
+#endif
             default: {
                 debugPrintLn("Unsupported network type");
                 break;
@@ -322,10 +351,12 @@ const char* Network::getCCID()
             case NETWORK_TYPE_LORA: {
                 break;
             }
+#ifndef MQTT_COMMS
             case NETWORK_TYPE_2G_3G: {
                 success = network3G.getCCID(tmpBuffer, sizeof(tmpBuffer));
                 break;
             }
+#endif
             default: {
                 debugPrintLn("Unsupported network type");
                 break;

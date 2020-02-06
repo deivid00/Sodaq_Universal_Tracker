@@ -33,6 +33,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #include "DataReceiveCallback.h"
 #include "Enums.h"
+#include <Sodaq_R4X_MQTT.h>
 
 class R4xNetwork {
 public:
@@ -63,6 +64,8 @@ public:
     bool getIMEI(char* buffer, size_t size);
     bool getCCID(char* buffer, size_t size);
     bool getModuleVersion(char* buffer, size_t size);
+    bool modemConnect(void);
+    bool setMqttInstance(Sodaq_R4X_MQTT* r4xMqttInstance);
 private:
     DataReceiveCallback _callback;
 

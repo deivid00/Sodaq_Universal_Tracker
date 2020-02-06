@@ -50,8 +50,10 @@ POSSIBILITY OF SUCH DAMAGE.
 
 //#define DEBUG
 
+#define MQTT_COMMS      //Enable MQTT as layer protocol instead of UDP
+
 #define PROJECT_NAME "SODAQ - Universal Tracker"
-#define VERSION "1.0.3"
+#define VERSION "1.0.3b"
 #define STARTUP_DELAY 5000
 
 // #define DEFAULT_LORA_PORT 2
@@ -121,6 +123,16 @@ Network network;
 
 #define DEFAULT_TARGET_IP "0.0.0.0"
 #define DEFAULT_TARGET_PORT 1
+
+#ifdef MQTT_COMMS
+    #include <Sodaq_MQTT.h>
+
+    #define DEFAULT_MQTT_BROKER     "api.allthingstalk.io"
+    #define DEFAULT_MQTT_PORT       1883
+
+    #define DEFAULT_ATT_TOKEN       ""
+    #define DEFAULT_MQTT_TOPIC      ""
+#endif
 
 #ifdef ARDUINO_SODAQ_SARA
     #define DEFAULT_NETWORK_TYPE Network::NETWORK_TYPE_NOTYPE
@@ -244,6 +256,20 @@ void setup()
     network.setConsoleStream(CONSOLE_STREAM);
     network.setNetworkType((Network::NetworkType)params.getNetworkType());
     network.init(MODEM_STREAM, updateConfigOverTheAir, getNow, INIT_SHOW_CONSOLE_MESSAGES, INIT_JOIN);
+
+#ifdef MQTT_COMMS
+    // Set the MQTT server hostname, and the port number
+    mqtt.setServer(params.getMqttBroker(), params.getTargetPort());
+
+    // OPTIONAL. Set the user name and password
+    mqtt.setAuth(params.getAttToken(), "1234");
+
+    // Set the MQTT client ID
+    mqtt.setClientId("sodaq_pub_12345");
+
+    // Set the MQTT keep alive
+    mqtt.setKeepAlive(300);
+#endif
 
     accelerometer.disableMagnetometer();
     pinMode(MAG_INT, OUTPUT);
@@ -428,7 +454,23 @@ void transmit()
             sendBufferSize += record.getSize();
         }
 
-        network.transmit(sendBuffer, sendBufferSize, ((uint32_t)params.getRXtimeout() * 1000));
+        #ifdef MQTT_COMMS
+            //const char * topic = "device/Xtnfb7UXRnfJA40HysNcEjw9/state";
+            String msg = "{\"t\":{\"value\": 33},\"d1\":{\"value\": 2}}";
+            
+            // PUBLISH something
+            debugPrint("publish MQTT:");
+            debugPrint(" Topic:");
+            debugPrint(params.getMqttTopic());
+            debugPrint(" Msg:");
+            debugPrint(msg);
+            if (!mqtt.publish(params.getMqttTopic(), msg.c_str())) {
+                debugPrintln("publish failed!!!!!");
+                //while (true) {}
+            }
+        #else
+            network.transmit(sendBuffer, sendBufferSize, ((uint32_t)params.getRXtimeout() * 1000));
+        #endif
     }
 }
 
@@ -1222,6 +1264,31 @@ void onConfigReset(void)
 
 #ifdef DEFAULT_TARGET_PORT
     params._targetPort = DEFAULT_TARGET_PORT;
+#endif
+
+#ifdef DEFAULT_MQTT_BROKER
+    // fail if the defined string is larger than what is expected in the config
+    BUILD_BUG_ON(sizeof(DEFAULT_MQTT_BROKER) > sizeof(params._mqttBroker));
+
+    strcpy(params._mqttBroker, DEFAULT_MQTT_BROKER);
+#endif
+
+#ifdef DEFAULT_MQTT_TOPIC
+    // fail if the defined string is larger than what is expected in the config
+    BUILD_BUG_ON(sizeof(DEFAULT_MQTT_TOPIC) > sizeof(params._mqttTopic));
+
+    strcpy(params._mqttTopic, DEFAULT_MQTT_TOPIC);
+#endif
+
+#ifdef DEFAULT_ATT_TOKEN
+    // fail if the defined string is larger than what is expected in the config
+    BUILD_BUG_ON(sizeof(DEFAULT_ATT_TOKEN) > sizeof(params._attToken));
+
+    strcpy(params._attToken, DEFAULT_ATT_TOKEN);
+#endif
+
+#ifdef DEFAULT_MQTT_PORT
+    params._targetPort = DEFAULT_MQTT_PORT;
 #endif
 
 #ifdef DEBUG
