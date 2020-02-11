@@ -48,7 +48,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "CayenneLPP.h"
 #include "Network.h"
 
-//#define DEBUG
 
 #define MQTT_COMMS      //Enable MQTT as layer protocol instead of UDP
 
@@ -114,11 +113,11 @@ Time time;
 Sodaq_LSM303AGR accelerometer;
 Network network;
 
-#define DEFAULT_APN "nb.inetd.gdsp"
+#define DEFAULT_APN "orangeworld"
 #define DEFAULT_FORCE_OPERATOR "20404"
 #define DEFAULT_BAND 20
 
-#define DEFAULT_APN_USER ""
+#define DEFAULT_APN_USER "orange"
 #define DEFAULT_APN_PASSWORD ""
 
 #define DEFAULT_TARGET_IP "0.0.0.0"
@@ -126,12 +125,11 @@ Network network;
 
 #ifdef MQTT_COMMS
     #include <Sodaq_MQTT.h>
+    #include <ArduinoJson.h>
 
     #define DEFAULT_MQTT_BROKER     "api.allthingstalk.io"
     #define DEFAULT_MQTT_PORT       1883
 
-    #define DEFAULT_ATT_TOKEN       ""
-    #define DEFAULT_MQTT_TOPIC      ""
 #endif
 
 #ifdef ARDUINO_SODAQ_SARA
@@ -455,16 +453,43 @@ void transmit()
         }
 
         #ifdef MQTT_COMMS
-            //const char * topic = "device/Xtnfb7UXRnfJA40HysNcEjw9/state";
-            String msg = "{\"t\":{\"value\": 33},\"d1\":{\"value\": 2}}";
+            //Crea el Payload JSON
+            StaticJsonDocument<256> jsonDoc;
+            //JsonObject stateObjHdop = jsonDoc.createNestedObject("HDOP");
+            //JsonObject stateObjPdop = jsonDoc.createNestedObject("PDOP");
+            //JsonObject stateObjVdop = jsonDoc.createNestedObject("VDOP");
+            JsonObject stateObjAlt = jsonDoc.createNestedObject("alt");
+            //JsonObject stateObjHeading = jsonDoc.createNestedObject("h");
+            /**JsonObject stateObjSatView = jsonDoc.createNestedObject("satView");
+            JsonObject stateObjSatUsed = jsonDoc.createNestedObject("satUsed");
+            JsonObject stateObjSpeed = jsonDoc.createNestedObject("speed");
+            JsonObject stateObjGPS = jsonDoc.createNestedObject("g");
+            JsonObject locationObj = stateObjGPS.createNestedObject("value");*/
+                        
+            // Write the temperature & humidity. Here you can use any C++ type (and you can refer to variables)
+            //stateObjHdop["value"] = 1;
+            //stateObjPdop["value"] = pdop;
+            //stateObjVdop["value"] = vdop;
+            //stateObjSatView["value"] = 2;
+            //stateObjSatUsed["value"] = 3;
+            //stateObjSpeed["value"] = 4;
+            //stateObjHeading["value"] = heading;
+            stateObjAlt["value"] = 5;
+            //locationObj["latitude"] = 12;
+            //locationObj["longitude"] = 34;
+           
+            char jsonBuffer[512];
+            serializeJson(jsonDoc, jsonBuffer);
             
             // PUBLISH something
             debugPrint("publish MQTT:");
             debugPrint(" Topic:");
             debugPrint(params.getMqttTopic());
             debugPrint(" Msg:");
-            debugPrint(msg);
-            if (!mqtt.publish(params.getMqttTopic(), msg.c_str())) {
+            debugPrintln(jsonBuffer);
+            
+            //if (!mqtt.publish(params.getMqttTopic(), msg.c_str())) {
+            if (!mqtt.publish(params.getMqttTopic(), jsonBuffer)) {
                 debugPrintln("publish failed!!!!!");
                 //while (true) {}
             }

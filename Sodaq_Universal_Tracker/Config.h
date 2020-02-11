@@ -64,7 +64,7 @@ struct ConfigParams
     char _appSKeyOrEUI[32 + 1];
     char _nwSKeyOrAppKey[32 + 1];
 
-    char _attToken[45 + 1];
+    char _attToken[50 + 1];
 
     char _mqttTopic[50 + 1];
     char _mqttBroker[32 + 1];
